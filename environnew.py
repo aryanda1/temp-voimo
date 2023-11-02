@@ -17,6 +17,7 @@ if setup_environment:
         ['git', 'clone', 'https://github.com/MSFTserver/pytorch3d-lite.git'],
         ['apt', 'install', 'ffmpeg'],
         ['pip', 'install', 'spleeter'],
+        ['pip','install','torchsde'],
         ['pip','install','openai'],
         ['pip','install','fastapi','nest-asyncio','pyngrok','uvicorn'],
         ['pip','install','python-multipart'],
@@ -28,7 +29,7 @@ if setup_environment:
         if print_subprocess:
             print(running)
     
-    print(subprocess.run(['git', 'clone', 'https://github.com/deforum/k-diffusion/'], stdout=subprocess.PIPE).stdout.decode('utf-8'))
+    print(subprocess.run(['git', 'clone', 'https://github.com/crowsonkb/k-diffusion/'], stdout=subprocess.PIPE).stdout.decode('utf-8'))
     with open('k-diffusion/k_diffusion/__init__.py', 'w') as f:
         f.write('')
 
