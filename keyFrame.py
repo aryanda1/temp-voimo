@@ -2,17 +2,19 @@ import wave
 import struct
 import numpy as np
 import subprocess
-
+import os
 def keyFrames(path,fps=12,fn="1+pow(x,4)"):
-    wav_name='wave.wav'
+    
     #If input audio not in wav convert in .wav
     if(path.split('\\')[-1].split('.')[-1])!='wav':
+        base_path, _ = os.path.splitext(path)
+        base_path+='.wav'
         cmd = ['ffmpeg',
               '-i',path,
-              wav_name]
+              base_path]
         process = subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout,stderr = process.communicate()
-        path=wav_name
+        path=base_path
     wv = wave.open(path,'rb')
     nFrames = wv.getnframes()#Read the number of frames
     no_ch = wv.getnchannels()# Read the number of channels

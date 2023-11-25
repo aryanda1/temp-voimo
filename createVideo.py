@@ -1,12 +1,11 @@
 fps = 12
 # from IPython import display
-def create_video(args,anim_args,mp3_path,upscale):
+def create_video(args,anim_args):
     import os
     import subprocess
-        
-    image_path = os.path.join(args.outdir,'images', f"{args.timestring}_%05d.png") if not upscale else os.path.join('results', f"{args.timestring}_%05d_out.png")
-    mp4_path = os.path.join(args.outdir, f"{args.timestring}.mp4")
-
+    image_path = os.path.join(args.outdir, (f"{args.timestring}_%05d.png") if not anim_args.upscale else os.path.join('results', f"{args.timestring}_%05d_out.png"))
+    mp4_path = os.path.join(args.folder_path, f"{args.timestring}.mp4")
+    mp3_path = os.path.join(args.folder_path,'audio.wav')
     print(image_path,' -> ',mp4_path)
     # make video
     cmd = [
@@ -33,11 +32,3 @@ def create_video(args,anim_args,mp3_path,upscale):
         print(stderr)
         raise RuntimeError(stderr)
     return mp4_path
-    # mp4 = open(mp4_path,'rb').read()
-    # data_url = "data:video/mp4;base64," + b64encode(mp4).decode()
-    # display.display( display.HTML(f'<video controls loop><source src="{data_url}" type="video/mp4"></video>') )
-    # yield mp4
-
-#from google.colab import files
-#files.download('/content/sample_data/README.md')
-#Note, that we can get the file path by clicking on the file and then c

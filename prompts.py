@@ -1,6 +1,7 @@
 import openai
 import time
 from tokenCount import num_tokens_from_messages
+import os
 
 role = '''I want you to act as a Stable Diffusion Art Prompt Generator. The formula for a prompt is made of parts, the parts are indicated by brackets. The [Subject] is the person place or thing the image is focused on. [Emotions] is the emotional look the subject or scene might have. [Verb] is What the subject is doing, such as standing, jumping, working and other varied that match the subject. [Adjectives] like beautiful, rendered, realistic, tiny, colorful and other varied that match the subject. The [Environment] in which the subject is in, [Lighting] of the scene like moody, ambient, sunny, foggy and others that match the Environment and compliment the subject. [Photography type] like Polaroid, long exposure, GoPro, bokeh and others. Dont include monochrome, fisheye, and black and white photography. And [Quality] like High definition, 4K, 8K, 64K UHD, SDR and other. The subject and environment should match and have the most emphasis.
 It is ok to omit one of the other formula parts. I will give you a [Subject], you will respond with a full prompt. Present the result as one full sentence, no line breaks, no delimiters, and keep it as concise as possible while still conveying a full scene.
@@ -27,27 +28,25 @@ def gptResponse(role,mes):
   ) 
   return res['choices'][0]['message']['content']
 
-def prompts(maxFrame,api_key,theme='',artists='',choice = 0):
+def prompts(api_key,path,theme='',artists='',choice = 0):
   openai.api_key = api_key
   # from promptsSuf import suf
   
-  animation_prompts = dict()
-  frameGap = int(maxFrame/5)
-  frame = 0
+  animation_prompts = []
   if choice<2:
-    with open("output/vocals.txt", 'r') as fp:
+    with open(os.path.join(path,'vocals.txt'), 'r') as fp:
       x = (fp.readlines())
-    # print(x)
+    print(x)
     impWords = gptResponse('U take input as some sentences, and u Extract 12 important words from it. The output will be keywords separated by comma',x[0])
     newScenes = gptResponse('U take input as keywords, and create 5 different scenes from given input using max 5 words from the input, and only output the scene nothing extra. The scene should have minimum 50 characters',impWords)
     newScenes = "\n".join([sent for sent in newScenes.split('\n') if len(sent)>10])
     if newScenes[0][0]=='1':
         newScenes = "\n".join(['Scene '+str(idx)+': '+sent[3:] for idx,sent in enumerate(newScenes.split('\n'))])
-    # print(newScenes)
+    print(newScenes)
     # print('kk')
     time.sleep(20)
     newKey = gptResponse('You are a keyword extraction assistant. Extract four keywords from each scene, ensuring the combined length of all keywords for each scene is under 100 characters.',newScenes)
-    # print(newKey)
+    print(newKey)
     for key in newKey.split('\n'):
         key = key.split(':')[-1]
         # print('Hello')
@@ -56,8 +55,7 @@ def prompts(maxFrame,api_key,theme='',artists='',choice = 0):
         # print(theme+','+key)
         prompt = gptResponse(role,theme+key)
         if len(prompt)>100:
-            animation_prompts[frame] = prompt
-            frame+=frameGap
+            animation_prompts.append(prompt)
   else:
     res2 = gptResponse(role2,theme)
     # print(res2)
@@ -67,12 +65,10 @@ def prompts(maxFrame,api_key,theme='',artists='',choice = 0):
     for prompt in res2:
       if(len(prompt)<40):
         continue
-      animation_prompts[frame] = prompt
-      frame+=frameGap
+      animation_prompts.append(prompt)
 
   # print(animation_prompts)
   if len(artists)>0:
     artistsPref = f'(style of {artists}) '
-    for key, value in animation_prompts.items():
-      animation_prompts[key] = artistsPref + value
+    animation_prompts = list(map((lambda x:artistsPref+x),animation_prompts))
   return animation_prompts
