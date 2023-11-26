@@ -13,21 +13,32 @@ role2 = '''I want you to act as a Stable Diffusion Art Prompt Generator. The for
 It is ok to omit one of the other formula parts. I will give you a [Subject], you will respond with a full prompt. Present the result as one full sentence, no line breaks, no delimiters, and keep it as concise as possible while still conveying a full scene.
 
 Here is a sample of how it should be output: "Beautiful woman, contemplative and reflective, sitting on a bench, cozy sweater, autumn park with colorful leaves, soft overcast light, muted color photography style, 4K quality."
-I Will give u input, u generate 4 different aesthatic prompts'''
+I Will give u input, u generate strictly strictly four(4) different aesthatic prompts again saying 4 not 1'''
 
-def gptResponse(role,mes):
+def gptResponse(role,mes, max_retries=5, retry_delay=1):
   message=[
           {"role": "system", "content": role},
           {"role": "user", "content": mes},
       ]
   tokCnt = num_tokens_from_messages(message)
-  res = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    max_tokens=4000 - tokCnt,
-    messages=message
-  ) 
-  return res['choices'][0]['message']['content']
+  for attempt in range(max_retries):
+    try:
+      # Set timeout for the API call
+      res = openai.ChatCompletion.create(
+          model="gpt-3.5-turbo",
+          max_tokens=4000 - tokCnt,
+          messages=message,
+          request_timeout=20  # Set your desired timeout here
+      )
+      return res['choices'][0]['message']['content']
 
+    except Exception as e:
+      # Handle any error
+      print(f"Error on attempt {attempt + 1}: {str(e)}")
+      time.sleep(retry_delay)
+      continue
+  return "Exceeded maximum number of retries. Unable to get a response."
+  
 def prompts(api_key,path,theme='',artists='',choice = 0):
   openai.api_key = api_key
   # from promptsSuf import suf
@@ -54,20 +65,23 @@ def prompts(api_key,path,theme='',artists='',choice = 0):
         # print('GG')
         # print(theme+','+key)
         prompt = gptResponse(role,theme+key)
-        if len(prompt)>100:
+        if len(prompt)>100: 
             animation_prompts.append(prompt)
   else:
-    res2 = gptResponse(role2,theme)
-    # print(res2)
-    if res2[0]=='1':
-      res2 = [sent[3:] for sent in res2.split('\n')]
-    # print(res2)
-    for prompt in res2:
-      if(len(prompt)<40):
-        continue
-      animation_prompts.append(prompt)
+    retry = 3
+    while len(animation_prompts)!=4 and retry:
+        res2 = gptResponse(role2,theme)
+        # print(res2)
+        startsWithNum = res2[0]=='1'
+        res2 = [sent[3:] if startsWithNum else sent for sent in res2.split('\n')]
+        print(res2)
+        for prompt in res2:
+          if(len(prompt)<40):
+            continue
+          animation_prompts.append(prompt)
+        retry-=1
 
-  # print(animation_prompts)
+  print(animation_prompts)
   if len(artists)>0:
     artistsPref = f'(style of {artists}) '
     animation_prompts = list(map((lambda x:artistsPref+x),animation_prompts))
